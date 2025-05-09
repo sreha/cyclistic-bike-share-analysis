@@ -18,4 +18,4 @@ It explores how casual riders and annual members use Cyclistic’s bike-share sy
 
 ## 🌐 Live Report
 
-View it here: 
+View it here: https://sreha.github.io/cyclistic-bike-share-analysis/
