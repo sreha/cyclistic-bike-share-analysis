@@ -1,0 +1,151 @@
+---
+title: "Cyclistic Bike-Share Case Study"
+author: "Shreha"
+date: "April 21, 2024"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: cosmo
+---
+
+# 🧭 Introduction
+
+Cyclistic is a fictional bike-share company operating in Chicago. The marketing director believes that maximizing the number of annual members is key to long-term success. To support this goal, this analysis compares the riding behaviors of **annual members** vs. **casual riders**, helping to inform future marketing strategies.
+
+# 📂 Data Overview
+
+13 months of trip data (monthly `.csv` files) was used and collected from Cyclistic’s bike-share service. Each record includes trip start/end time, bike type, user type, and location coordinates.
+This report was prepared on `r format(as.Date("2024-04-21"), "%B %d, %Y")` based on 13 months of ride data.
+
+
+Key cleaning steps:
+- Merged all monthly files into one dataset
+- Parsed `started_at` and `ended_at` as datetime
+- Created new variables like `ride_length`, `day_of_week`, `hour`, and `month`
+- Removed trips with:
+  - Missing data
+  - Ride length ≤ 0 or > 24 hours
+
+# 🔍 Descriptive Analysis
+
+```{r load-libs, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(ggplot2)
+library(scales)
+
+source("scripts/01_clean_and_merge.R")
+
+```
+
+## Average Ride Duration by Day
+
+The dataset includes a total of `r format(nrow(bike_data), big.mark = ",")` ride entries.
+
+
+```{r avg-ride-duration-day}
+bike_data %>%
+  group_by(member_casual, day_of_week) %>%
+  summarise(avg_duration = mean(ride_length)) %>%
+  ggplot(aes(x = day_of_week, y = avg_duration, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(title = "Avg Ride Duration by Day", y = "Minutes")
+```
+
+
+## Total Rides by Day of Week
+
+
+```{r total-rides-day}
+bike_data %>%
+  group_by(member_casual, day_of_week) %>%
+  summarise(total_rides = n()) %>%
+  ggplot(aes(x = day_of_week, y = total_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Total Rides by Day of Week", y = "Total Rides")
+```
+
+
+## Ride count by Hour
+
+```{r ride-count-hour}
+bike_data %>%
+  group_by(member_casual, hour) %>%
+  summarise(ride_count = n()) %>%
+  ggplot(aes(x = hour, y = ride_count, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Ride Count by Hour", x = "Hour", y = "Number of Rides")
+```
+
+
+## Most Used Start Stations
+
+```{r most-used-startstations}
+bike_data %>%
+  filter(!is.na(start_station_name)) %>%
+  group_by(start_station_name) %>%
+  summarise(total_rides = n()) %>%
+  arrange(desc(total_rides)) %>%
+  slice_head(n = 10) %>%
+  ggplot(aes(x = reorder(start_station_name, total_rides), y = total_rides)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Top 10 Most Used Start Stations", x = "Station", y = "Rides")
+```
+
+
+## Bonus: Map of Ride Start Locations
+
+```{r map-of-ride}
+library(leaflet)
+
+sample_map_data <- bike_data %>%
+  filter(!is.na(start_lat) & !is.na(start_lng)) %>%
+  slice_sample(n = 1000)
+
+leaflet(sample_map_data) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~start_lng,
+    lat = ~start_lat,
+    color = ~ifelse(member_casual == "member", "blue", "red"),
+    radius = 2,
+    popup = ~paste("Station:", start_station_name, "<br>Type:", member_casual)
+  ) %>%
+  addLegend("bottomright", 
+            colors = c("blue", "red"),
+            labels = c("Member", "Casual"),
+            title = "User Type")
+```
+
+
+## Key Insights
+
+Casual riders take longer rides, especially on weekends.
+
+Members ride more frequently, especially during weekday commutes.
+
+Casual users dominate on Saturdays and Sundays.
+
+Most used start stations are centrally located or tourist-heavy areas.
+
+
+## Recommendations
+
+Offer weekday discounts or incentives for casual users to increase usage.
+
+Develop targeted promotions for popular weekend locations.
+
+Emphasize the value of membership with ride bundles or commuter perks.
+
+Promote bike-share as a reliable weekday commute alternative for casual users.
+
+
+## Conclusion
+
+This analysis provides data-driven support to inform Cyclistic’s marketing strategy. By targeting casual riders with relevant incentives and leveraging usage patterns, the company can increase membership and customer retention.
