@@ -77,14 +77,6 @@ This project helped me solidify my knowledge of:
 
 ---
 
-## ✏️ Next Steps (Optional Ideas)
-
-- Build a Tableau dashboard or Shiny app for interactive filtering
-- Conduct time-series forecasting on seasonal trends
-- Perform clustering or segmentation based on user behavior
-
----
-
 ## 📫 Contact
 
 If you’d like to connect, discuss improvements, or collaborate on data projects, feel free to reach out via GitHub.
